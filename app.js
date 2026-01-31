@@ -48,21 +48,26 @@ async function fetchTransactions() {
     const listEl = document.getElementById('transactionsList');
 
     if (transactions.length === 0) {
-      listEl.innerHTML = '<p class="empty">No transactions yet. Add your first one above!</p>';
+      listEl.innerHTML = `
+        <div class="empty-state">
+          <p>No transactions yet</p>
+          <small>Add your first transaction to get started</small>
+        </div>
+      `;
       return;
     }
 
     listEl.innerHTML = transactions.map(t => `
-      <div class="transaction ${t.type}">
+      <div class="transaction">
         <div class="transaction-info">
           <h4>${t.description || 'No description'}</h4>
           <div class="transaction-meta">
-            ${t.category ? `<span class="category">${t.category}</span> • ` : ''}
-            <span class="date">${formatDate(t.created_at)}</span>
+            ${t.category ? `<span class="category-badge">${t.category}</span>` : ''}
+            <span>${formatDate(t.created_at)}</span>
           </div>
         </div>
-        <div class="transaction-amount">
-          <span class="amount ${t.type}">
+        <div class="transaction-actions">
+          <span class="amount-display ${t.type}">
             ${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}
           </span>
           <button class="delete-btn" onclick="deleteTransaction(${t.id})">Delete</button>
