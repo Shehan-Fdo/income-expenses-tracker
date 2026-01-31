@@ -1,0 +1,18 @@
+services:
+  income-tracker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: income-tracker
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - PORT=3000
+    networks:
+      - income-tracker-net
+
+networks:
+  income-tracker-net:
+    driver: bridge

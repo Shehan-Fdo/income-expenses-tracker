@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+.env
+.env.example
+vercel.json
+api
+public
+README.md
+DEPLOY.md
+scripts
