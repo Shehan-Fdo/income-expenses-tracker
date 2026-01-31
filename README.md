@@ -69,6 +69,32 @@ docker compose restart
 docker compose up -d --build
 ```
 
+### SSL Setup with Custom Domain
+
+For production with HTTPS and custom domain:
+
+1. **Add DNS Record in Cloudflare:**
+   - Type: A
+   - Name: `tracker`
+   - Content: `143.198.220.222` (your server IP)
+   - Proxy: Enabled (Cloudflare will handle SSL)
+   - TTL: Auto
+
+2. **Nginx Configuration:**
+   Nginx is already configured for `tracker.kavindushehan.site`
+   with reverse proxy to port 3000.
+
+3. **SSL Certificate (Optional):**
+   If you want a Let's Encrypt SSL certificate (instead of Cloudflare):
+   ```bash
+   sudo bash scripts/ssl-setup.sh
+   ```
+
+4. **Access URL:**
+   After DNS propagates (usually 5-30 minutes):
+   - http://tracker.kavindushehan.site
+   - https://tracker.kavindushehan.site (if Cloudflare proxy is enabled)
+
 ### Container Details
 
 - **Base Image:** node:18-alpine
