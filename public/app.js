@@ -9,16 +9,35 @@ const formatCurrency = (amount) => {
   }).format(amount);
 };
 
-// Format date
+// Format date with relative time for recent entries
 const formatDate = (dateString) => {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  // Relative time for recent entries
+  let timeString;
+  if (diffMins < 1) {
+    timeString = 'Just now';
+  } else if (diffMins < 60) {
+    timeString = `${diffMins}m ago`;
+  } else if (diffHours < 24) {
+    timeString = `${diffHours}h ago`;
+  } else if (diffDays < 7) {
+    timeString = `${diffDays}d ago`;
+  } else {
+    // Fall back to regular date for older entries
+    timeString = date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+    });
+  }
+
+  return timeString;
 };
 
 // Fetch and display summary
@@ -48,16 +67,16 @@ async function fetchTransactions() {
     const listEl = document.getElementById('transactionsList');
 
     if (transactions.length === 0) {
-      listEl.innerHTML = '<p class="empty">No transactions yet. Add your first one above!</p>';
+      listEl.innerHTML = '<p class="empty">No transactions yet. Add your first transaction to get started.</p>';
       return;
     }
 
-    listEl.innerHTML = transactions.map(t => `
+    listEl.innerHTML = transactions.map((t, index) => `
       <div class="transaction ${t.type}">
         <div class="transaction-info">
           <h4>${t.description || 'No description'}</h4>
           <div class="transaction-meta">
-            ${t.category ? `<span class="category">${t.category}</span> • ` : ''}
+            ${t.category ? `<span class="category-badge">${t.category}</span>` : ''}
             <span class="date">${formatDate(t.created_at)}</span>
           </div>
         </div>
@@ -74,6 +93,14 @@ async function fetchTransactions() {
   }
 }
 
+// Set loading state
+function setLoading(loading) {
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = loading;
+  btn.textContent = loading ? 'Adding...' : 'Add Transaction';
+  btn.style.opacity = loading ? '0.6' : '1';
+}
+
 // Add transaction
 async function addTransaction(e) {
   e.preventDefault();
@@ -88,6 +115,8 @@ async function addTransaction(e) {
     return;
   }
 
+  setLoading(true);
+
   try {
     const response = await fetch(API_URL, {
       method: 'POST',
@@ -99,8 +128,7 @@ async function addTransaction(e) {
       // Reset form
       document.getElementById('transactionForm').reset();
       // Refresh data
-      fetchSummary();
-      fetchTransactions();
+      await Promise.all([fetchSummary(), fetchTransactions()]);
     } else {
       const error = await response.json();
       alert(error.error || 'Failed to add transaction');
@@ -108,6 +136,8 @@ async function addTransaction(e) {
   } catch (err) {
     console.error('Error adding transaction:', err);
     alert('Failed to add transaction. Please try again.');
+  } finally {
+    setLoading(false);
   }
 }
 
@@ -123,8 +153,7 @@ async function deleteTransaction(id) {
     });
 
     if (response.ok) {
-      fetchSummary();
-      fetchTransactions();
+      await Promise.all([fetchSummary(), fetchTransactions()]);
     } else {
       alert('Failed to delete transaction');
     }
@@ -138,3 +167,9 @@ async function deleteTransaction(id) {
 document.getElementById('transactionForm').addEventListener('submit', addTransaction);
 fetchSummary();
 fetchTransactions();
+
+// Auto-refresh every 30 seconds
+setInterval(() => {
+  fetchSummary();
+  fetchTransactions();
+}, 30000);
